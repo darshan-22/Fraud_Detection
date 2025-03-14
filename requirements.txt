@@ -1,0 +1,15 @@
+streamlit
+fastapi
+uvicorn
+xgboost
+nest_asyncio
+pandas
+numpy
+pydantic
+sqlalchemy
+geopy
+scikit-learn
+shap
+plotly
+requests
+

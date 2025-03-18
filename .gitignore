@@ -42,5 +42,9 @@ venv/
 # Ignore node_modules (for JavaScript projects)
 node_modules/
 npm-debug.log
+
+
+#Ignore the current editable files
 *front.py
 *back.py
+*test5.db

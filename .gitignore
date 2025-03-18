@@ -1,1 +1,46 @@
-test.db
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore Python cache and virtual environments
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+env/
+venv/
+
+# Ignore Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore VS Code settings
+.vscode/
+
+# Ignore log and temporary files
+*.log
+*.tmp
+*.test.db
+
+# Ignore compiled code and binary files
+*.o
+*.out
+*.class
+
+# Ignore environment variables and secrets
+.env
+*.key
+*.pem
+
+# Ignore dataset files or large CSVs
+*.csv
+*.xlsx
+
+# Ignore generated reports
+*.html
+*.pdf
+
+# Ignore node_modules (for JavaScript projects)
+node_modules/
+npm-debug.log
+*front.py
+*back.py

@@ -258,7 +258,6 @@ def calculate_engineered_features(transaction_data: dict, db: Session):
         results.append(anomalies)
     all_results = pd.concat(results)
     df['RegionAnomaly_E12'] = all_results.reindex(df.index, fill_value=0)
-    
     df['HourlyTransactionCount_E13'] = df.groupby(['User_ID', 'HourWithinSlot_E3'])['TransactionID'].transform('count').fillna(0)
 
     df['DaysSinceLastTransac_D2'] = df.groupby('User_ID')['TransactionDT'].diff().dt.total_seconds().div(86400).fillna(0).map(lambda x: f"{x:.2f}")
@@ -319,20 +318,47 @@ def calculate_engineered_features(transaction_data: dict, db: Session):
     else:
         unique_emails_count = len(historical_emails)
     df['EmailFraudFlag'] = 1 if unique_emails_count > 5 else 0
-    
-    fraud_score = (
-    df['EmailFraudFlag'].iloc[-1] * 25 +
-    (1 if df['TransactionVelocity_E10'].iloc[-1] > 5 else 0) * 20 +
+
+    #SYNTHETIC IDENTITY FRAUD DETECTION
+    # Pattern 1: Email Fraud Flag
+    fraud_score_email = df['EmailFraudFlag'].iloc[-1] * 25
+
+    # Pattern 2: Transaction Velocity
+    fraud_score_velocity = (1 if df['TransactionVelocity_E10'].iloc[-1] > 5 else 0) * 20
+
+    # Pattern 3: Region and Device Mismatch/Anomaly
+    fraud_score_region_device = (
     df['RegionAnomaly_E12'].iloc[-1] * 15 +
     df['DeviceMismatch_M6'].iloc[-1] * 5 +
+    df['RegionMismatch_M8'].iloc[-1] * 5
+    )
+
+    # Pattern 4: Transaction Amount Variance and Timing Anomaly
+    fraud_score_amount_timing = (
     (1 if df['TransactionAmountVariance_E6'].iloc[-1] > 10000 else 0) * 10 +
-    df['TimingAnomaly_E11'].iloc[-1] * 20 +
-    df['RegionMismatch_M8'].iloc[-1] * 5 +
-    (10 if df['TransactionRatio_E7'].iloc[-1] == 1 and df['RegionMismatch_M8'].iloc[-1] == 1 else 0) +  # Pattern 1
-    (15 if df['DeviceMismatch_M6'].iloc[-1] == 1 and df['TimingAnomaly_E11'].iloc[-1] == 1 else 0) +  # Pattern 2
-    (10 if df['HourlyTransactionCount_E13'].iloc[-1] > 3 else 0) +  # Pattern 3
-    (15 if float(df['SameCardDaysDiff_D3'].iloc[-1]) < 0.01 else 0) +  # Pattern 4 (cast to float due to string format)
-    (5 if df['DeviceMatching_M4'].iloc[-1] == 0 else 0)  # Pattern 5
+    df['TimingAnomaly_E11'].iloc[-1] * 20
+    )
+
+    # Pattern 5: Device Matching and Region Mismatch Conditional
+    fraud_score_device_region_conditional = (
+    (10 if df['TransactionRatio_E7'].iloc[-1] == 1 and df['RegionMismatch_M8'].iloc[-1] == 1 else 0) +
+    (5 if df['DeviceMatching_M4'].iloc[-1] == 0 else 0)
+    )
+
+    # Pattern 6: Device Mismatch and Timing Conditional, and other conditionals
+    fraud_score_device_timing_other_conditionals = (
+    (15 if df['DeviceMismatch_M6'].iloc[-1] == 1 and df['TimingAnomaly_E11'].iloc[-1] == 1 else 0) +
+    (10 if df['HourlyTransactionCount_E13'].iloc[-1] > 3 else 0) +
+    (15 if float(df['SameCardDaysDiff_D3'].iloc[-1]) < 0.01 else 0)
+    )
+    
+    fraud_score = (
+        fraud_score_email +
+        fraud_score_velocity +
+        fraud_score_region_device +
+        fraud_score_amount_timing +
+        fraud_score_device_region_conditional +
+        fraud_score_device_timing_other_conditionals
     )
 
     # Add debug prints

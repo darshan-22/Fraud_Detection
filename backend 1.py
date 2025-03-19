@@ -37,7 +37,7 @@ nest_asyncio.apply()
 app = FastAPI()
 
 current_dir = os.getcwd()
-db_file_name = "test 5.db"
+db_file_name = "test5.db"
 db_path = os.path.join(current_dir, db_file_name)
 
 if not os.path.exists(db_path):
@@ -295,8 +295,7 @@ def calculate_engineered_features(transaction_data: dict, db: Session):
     )
 
     df['RegionMismatch_M8'] = df.apply(
-        lambda row: 0 if pd.isna(row['Order_Region']) or pd.isna(row['User_Region'])
-                    else (1 if row['Order_Region'] != row['User_Region'] else 0),
+        lambda row: 0 if pd.isna(row['Order_Region']) or pd.isna(row['User_Region']) else (1 if row['Order_Region'] != row['User_Region'] else 0),
         axis=1
     )
 
@@ -322,13 +321,18 @@ def calculate_engineered_features(transaction_data: dict, db: Session):
     df['EmailFraudFlag'] = 1 if unique_emails_count > 5 else 0
     
     fraud_score = (
-        df['EmailFraudFlag'].iloc[-1] * 25 +
-        (1 if df['TransactionVelocity_E10'].iloc[-1] > 5 else 0) * 20 +
-        df['RegionAnomaly_E12'].iloc[-1] * 15 +
-        df['DeviceMismatch_M6'].iloc[-1] * 5 +
-        (1 if df['TransactionAmountVariance_E6'].iloc[-1] > 10000 else 0) * 10 +
-        df['TimingAnomaly_E11'].iloc[-1] * 20 +
-        df['RegionMismatch_M8'].iloc[-1] * 5
+    df['EmailFraudFlag'].iloc[-1] * 25 +
+    (1 if df['TransactionVelocity_E10'].iloc[-1] > 5 else 0) * 20 +
+    df['RegionAnomaly_E12'].iloc[-1] * 15 +
+    df['DeviceMismatch_M6'].iloc[-1] * 5 +
+    (1 if df['TransactionAmountVariance_E6'].iloc[-1] > 10000 else 0) * 10 +
+    df['TimingAnomaly_E11'].iloc[-1] * 20 +
+    df['RegionMismatch_M8'].iloc[-1] * 5 +
+    (10 if df['TransactionRatio_E7'].iloc[-1] == 1 and df['RegionMismatch_M8'].iloc[-1] == 1 else 0) +  # Pattern 1
+    (15 if df['DeviceMismatch_M6'].iloc[-1] == 1 and df['TimingAnomaly_E11'].iloc[-1] == 1 else 0) +  # Pattern 2
+    (10 if df['HourlyTransactionCount_E13'].iloc[-1] > 3 else 0) +  # Pattern 3
+    (15 if float(df['SameCardDaysDiff_D3'].iloc[-1]) < 0.01 else 0) +  # Pattern 4 (cast to float due to string format)
+    (5 if df['DeviceMatching_M4'].iloc[-1] == 0 else 0)  # Pattern 5
     )
 
     # Add debug prints

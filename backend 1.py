@@ -212,19 +212,6 @@ def calculate_engineered_features(transaction_data: dict, db: Session):
 
     window_24h = df.groupby('User_ID', group_keys=False).apply(lambda x: x[x['TransactionDT'] >= x['TransactionDT'].max() - pd.Timedelta(hours=24)]).reset_index(drop=True)
     df['TransactionVelocity_E10'] = window_24h.groupby('User_ID')['TransactionID'].transform('count')
-
-    # most_used_device = df.groupby('User_ID')['DeviceType'].agg(
-    # lambda x: x.mode()[0] if not x.mode().empty else 'Unknown'  # Handle empty mode by setting 'Unknown'
-    # ).reset_index()
-    # most_used_device.columns = ['User_ID', 'MostUsedDevice']
-
-    # # Merge the most used device information back to the original dataframe
-    # df = pd.merge(df, most_used_device, on='User_ID', how='left')
-
-    # # Create the 'Device Mismatch(M6)' column to indicate whether the device used in the transaction is different from the most frequent device for that user
-    # df['Device Mismatch(M6)'] = (df['DeviceType'] != df['MostUsedDevice']).astype(int)
-    # # Drop 'MostUsedDevice' as it's no longer needed
-    # df = df.drop(columns=['MostUsedDevice'])
       
     def timing_anomaly(group):
         if group.empty:
